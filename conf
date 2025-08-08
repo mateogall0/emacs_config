@@ -1,0 +1,105 @@
+;; Enable mouse support in terminal
+(xterm-mouse-mode 1)
+
+;; Scroll with mouse wheel in terminal
+(global-set-key [mouse-4] (lambda () (interactive) (scroll-down	1)))
+(global-set-key [mouse-5] (lambda () (interactive) (scroll-up 1)))
+
+
+;; Better default settings
+(setq inhibit-startup-screen t)       ;; Skip startup screen
+(setq ring-bell-function 'ignore)     ;; No beeping
+(setq make-backup-files nil)          ;; No ~backup files
+(setq auto-save-default nil)          ;; No autosave files
+(show-paren-mode 1)                    ;; Highlight matching parentheses
+(global-display-line-numbers-mode 1)   ;; Show line numbers
+
+;; Enable clipboard integration (share kill-ring with OS clipboard)
+(setq select-enable-clipboard t)
+(setq select-enable-primary t) ;; for PRIMARY selection in X11
+
+(when (not (display-graphic-p))
+  (defun copy-to-x-clipboard (text &optional push)
+    (with-temp-buffer
+      (insert text)
+      (call-process-region (point-min) (point-max) "xclip" nil 0 nil "-selection" "clipboard")))
+
+  (setq interprogram-cut-function 'copy-to-x-clipboard))
+
+;; Enable line numbers
+(global-display-line-numbers-mode 1)
+
+;; Show current line number normally, other lines with relative numbers
+(setq display-line-numbers-type 'relative)
+;; To show absolute line number for current line and relative for others
+;; If using Emacs 26 or newer, this works:
+(setq display-line-numbers-current-absolute t)
+
+;; Shorter y/n prompts
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; Save open buffers
+(global-set-key (kbd "<f5>") 'save-some-buffers)
+
+
+(defun move-line-up ()
+  "Move the current line up by one."
+  (interactive)
+  (transpose-lines 1)
+  (forward-line -2))
+
+(defun move-line-down ()
+  "Move the current line down by one."
+  (interactive)
+  (forward-line 1)
+  (transpose-lines 1)
+  (forward-line -1))
+
+(global-set-key (kbd "M-<up>") 'move-line-up)
+(global-set-key (kbd "M-<down>") 'move-line-down )
+
+
+(defun match-paren (arg)
+  "Go to the matching parenthesis if on parenthesis."
+  (interactive "p")
+  (cond ((looking-at "\\s(") (forward-sexp 1))
+        ((looking-back "\\s)" 1) (backward-sexp 1))
+        (t (self-insert-command (or arg 1)))))
+
+(global-set-key (kbd "C-c %") 'match-paren)
+
+;; Delete selected when pasting
+(delete-selection-mode 1)
+
+;; Make Ctrl+w always delete previous word (kill word backward)
+(global-set-key (kbd "C-w") 'backward-kill-word)
+
+
+(defun my-increment-number-at-point (arg)
+  "Increment number at point by ARG (default 1)."
+  (interactive "p")
+  (let ((num-start (point))
+        num-end num)
+    (skip-chars-backward "0123456789")
+    (setq num-start (point))
+    (skip-chars-forward "0123456789")
+    (setq num-end (point))
+    (setq num (string-to-number (buffer-substring-no-properties num-start num-end)))
+    (delete-region num-start num-end)
+    (insert (number-to-string (+ num arg)))))
+
+(defun my-decrement-number-at-point (arg)
+  "Decrement number at point by ARG (default 1)."
+  (interactive "p")
+  (let ((num-start (point))
+        num-end num)
+    (skip-chars-backward "0123456789")
+    (setq num-start (point))
+    (skip-chars-forward "0123456789")
+    (setq num-end (point))
+    (setq num (string-to-number (buffer-substring-no-properties num-start num-end)))
+    (delete-region num-start num-end)
+    (insert (number-to-string (- num arg)))))
+
+(global-set-key (kbd "C-c i") 'my-increment-number-at-point)
+(global-set-key (kbd "C-c d") 'my-decrement-number-at-point)
